@@ -1,8 +1,11 @@
 package it.polito.tdp.nyc;
 
 import java.net.URL;
+import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import it.polito.tdp.nyc.model.Model;
+import it.polito.tdp.nyc.model.NTA;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -11,6 +14,9 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+
+
+import it.polito.tdp.nyc.model.Arco;
 
 public class FXMLController {
 
@@ -41,7 +47,7 @@ public class FXMLController {
     private TableColumn<?, ?> clV2; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbBorough"
-    private ComboBox<?> cmbBorough; // Value injected by FXMLLoader
+    private ComboBox<String> cmbBorough; // Value injected by FXMLLoader
 
     @FXML // fx:id="tblArchi"
     private TableView<?> tblArchi; // Value injected by FXMLLoader
@@ -58,16 +64,98 @@ public class FXMLController {
     @FXML
     void doAnalisiArchi(ActionEvent event) {
     	
+    	this.txtResult.clear();
+    	
+    	if(!this.model.isGrafoLoaded()) {
+    		
+    		this.txtResult.setText("Crea grafo prima!");
+    		return;
+    		
+    	}
+    	
+    	List<Arco> soluzione = this.model.analisiArchi();
 
-    }
-
-    @FXML
-    void doCreaGrafo(ActionEvent event) {
+    	this.txtResult.appendText("PESO MEDIO: " + this.model.getMedia() + "\n");
+    	this.txtResult.appendText("ARCHI CON PESO MAGGIORE DEL PESO MEDIO: " + soluzione.size() + "\n");
+    	
+    	for(Arco a : soluzione) {
+    		
+    		this.txtResult.appendText(a + "\n");
+    	}
+    	
     	
     }
 
     @FXML
+    void doCreaGrafo(ActionEvent event) {
+	
+    	this.txtResult.clear();
+        
+    	String borough = this.cmbBorough.getValue();
+    	
+    	if(borough == null) {
+    		
+    		this.txtResult.appendText("Seleziona una voce! \n");
+    		return;
+    		
+    	}
+
+    	this.model.creaGrafo(borough);
+    	
+    	this.txtResult.appendText("Grafo creato! \n");
+    	this.txtResult.appendText("# Vertici: " + this.model.getNNodes() + "\n");
+    	this.txtResult.appendText("# Archi: " + this.model.getNArchi() + "\n");
+        
+        
+    }
+
+    @FXML
     void doSimula(ActionEvent event) {
+    	
+    	this.txtResult.clear();
+    	
+    	String inputProb = this.txtProb.getText();
+    	
+    	double probShare = 0.0;
+    	
+    	try {
+    		
+    		probShare = Double.parseDouble(inputProb);
+    		
+    	} catch(NumberFormatException e) {
+    		
+    		this.txtResult.appendText("Inserisci un valore double alla probabilità");
+    		
+    		return;
+    		
+    	}
+    	
+    	
+    	
+    	String inputDurata = this.txtDurata.getText();
+    	
+    	int durata = 0;
+    	
+    	try {
+    		
+    		durata = Integer.parseInt(inputDurata);
+    		
+    	} catch(NumberFormatException e) {
+    		
+    		this.txtResult.appendText("Inserisci un valore intero alla durata");
+    		
+    		return;
+    		
+    	}
+    	
+    	Map<NTA, Integer> condivisioni = this.model.Simula(probShare, durata);
+    	
+    	for(NTA n : condivisioni.keySet()) {
+    		
+    		this.txtResult.appendText(n.getNTACode() + " " + condivisioni.get(n) + "\n");
+    		
+    	}
+    	
 
     }
 
@@ -90,6 +178,8 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	
+    	this.cmbBorough.getItems().addAll(this.model.getListaBorough());
     }
 
 }
